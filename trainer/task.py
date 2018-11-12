@@ -4,10 +4,10 @@ import numpy as np
 
 def serving_input_fn():
     inputs = {}
-    inputs['x_input'] = tf.placeholder(shape=[None,28,28,1], dtype=tf.float32)
+    inputs['f1'] = tf.placeholder(shape=[None,1], dtype=tf.float32)
     return tf.estimator.export.ServingInputReceiver(inputs, inputs)
 
-def main():
+def main(argv=None):
     x_feature = tf.feature_column.numeric_column('f1')
     
     train_features = np.array([1., 2., 3., 4.])
@@ -28,7 +28,7 @@ def main():
         return dataset
     
     run_config = tf.estimator.RunConfig(
-        model_dir='output'
+        model_dir='gs://linear-estimator/train'
     )
     regressor = tf.estimator.LinearRegressor(
         feature_columns=[x_feature],
@@ -36,8 +36,10 @@ def main():
     )
     
     train_spec = tf.estimator.TrainSpec(train_input_fn, max_steps=2500)
+    exporter = tf.estimator.FinalExporter('linear', serving_input_fn)
     eval_spec = tf.estimator.EvalSpec(test_input_fn, steps=1, exporters=[exporter])
     tf.estimator.train_and_evaluate(regressor, train_spec, eval_spec)
 
 if __name__ == '__main__':
+    tf.logging.set_verbosity(tf.logging.DEBUG)
     tf.app.run()
